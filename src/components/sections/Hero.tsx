@@ -3,45 +3,52 @@ import { Button } from '@/components/ui/button';
 import { ChevronDown, Download, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+
 export default function Hero() {
   const [typedText, setTypedText] = useState('');
-  const [currentPhraseIndex, setCurrentPhraseIndex] = useState(0);
   const phrases = ['Full-stack Developer', 'Java Expert', 'React Specialist', 'Cloud Architect'];
   const typingSpeed = 100;
   const deleteSpeed = 50;
   const pauseTime = 1500;
+
+  const currentPhraseIndex = useRef(0);
+  const currentCharIndex = useRef(0);
   const isTyping = useRef(true);
-  const currentIndex = useRef(0);
 
   useEffect(() => {
-    const typewriterEffect = () => {
-      const currentPhrase = phrases[currentPhraseIndex];
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
+    const type = () => {
+      const currentPhrase = phrases[currentPhraseIndex.current];
 
       if (isTyping.current) {
-        if (currentIndex.current < currentPhrase.length) {
-          setTypedText(currentPhrase.substring(0, currentIndex.current + 1));
-          currentIndex.current++;
-          setTimeout(typewriterEffect, typingSpeed);
+        if (currentCharIndex.current < currentPhrase.length) {
+          setTypedText(currentPhrase.substring(0, currentCharIndex.current + 1));
+          currentCharIndex.current += 1;
+          timeoutId = setTimeout(type, typingSpeed);
         } else {
           isTyping.current = false;
-          setTimeout(typewriterEffect, pauseTime);
+          timeoutId = setTimeout(type, pauseTime);
         }
       } else {
-        if (currentIndex.current > 0) {
-          setTypedText(currentPhrase.substring(0, currentIndex.current - 1));
-          currentIndex.current--;
-          setTimeout(typewriterEffect, deleteSpeed);
+        if (currentCharIndex.current > 0) {
+          setTypedText(currentPhrase.substring(0, currentCharIndex.current - 1));
+          currentCharIndex.current -= 1;
+          timeoutId = setTimeout(type, deleteSpeed);
         } else {
           isTyping.current = true;
-          setCurrentPhraseIndex((prev) => (prev + 1) % phrases.length);
-          setTimeout(typewriterEffect, typingSpeed);
+          currentPhraseIndex.current = (currentPhraseIndex.current + 1) % phrases.length;
+          timeoutId = setTimeout(type, typingSpeed);
         }
       }
     };
 
-    const timer = setTimeout(typewriterEffect, typingSpeed);
-    return () => clearTimeout(timer);
-  }, [currentPhraseIndex, phrases]);
+    type(); // Start typing effect
+
+    return () => clearTimeout(timeoutId); // Cleanup on unmount
+  }, []); // Empty dependency array to run only once
+
+
 
   const scrollToNextSection = () => {
     const aboutSection = document.getElementById('about');
